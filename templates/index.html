@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PhishGuard AI — Threat Detection</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:        #050a0f;
+      --panel:     #090f18;
+      --border:    #0d2137;
+      --accent:    #00d4ff;
+      --accent2:   #00ff88;
+      --danger:    #ff3366;
+      --safe:      #00ff88;
+      --text:      #c8e6f5;
+      --muted:     #3a5a70;
+      --mono:      'Share Tech Mono', monospace;
+      --sans:      'Rajdhani', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Glow orb */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 400px;
+      background: radial-gradient(ellipse, rgba(0,212,255,0.06) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── Header ─── */
+    header {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 860px;
+      padding: 48px 24px 0;
+      text-align: center;
+    }
+
+    .logo-line {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin-bottom: 10px;
+    }
+
+    .shield-icon {
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, var(--accent), #0088cc);
+      clip-path: polygon(50% 0%, 100% 25%, 100% 70%, 50% 100%, 0% 70%, 0% 25%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      animation: pulse-shield 2.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-shield {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(0,212,255,0); }
+      50%       { box-shadow: 0 0 0 12px rgba(0,212,255,0.12); }
+    }
+
+    h1 {
+      font-family: var(--sans);
+      font-size: clamp(28px, 5vw, 40px);
+      font-weight: 700;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #fff;
+    }
+
+    h1 span { color: var(--accent); }
+
+    .tagline {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .status-bar {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0,212,255,0.06);
+      border: 1px solid rgba(0,212,255,0.15);
+      border-radius: 2px;
+      padding: 6px 16px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--accent);
+      margin-top: 16px;
+    }
+
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent2); animation: blink 1.2s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+    /* ─── Stats ─── */
+    .stats-row {
+      display: flex;
+      gap: 1px;
+      width: 100%;
+      max-width: 860px;
+      padding: 24px 24px 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .stat-box {
+      flex: 1;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 16px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-box::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0.5;
+    }
+
+    .stat-val {
+      font-family: var(--mono);
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* ─── Main card ─── */
+    main {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 860px;
+      padding: 24px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent));
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-header-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+    .card-title {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .card-body { padding: 28px 24px; }
+
+    label {
+      display: block;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 180px;
+      background: rgba(0,212,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.7;
+      padding: 16px;
+      resize: vertical;
+      transition: border-color 0.2s, background 0.2s;
+      outline: none;
+    }
+
+    textarea:focus {
+      border-color: rgba(0,212,255,0.4);
+      background: rgba(0,212,255,0.05);
+    }
+
+    textarea::placeholder { color: var(--muted); }
+
+    .example-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+      margin-bottom: 22px;
+    }
+
+    .chip {
+      background: rgba(0,212,255,0.06);
+      border: 1px solid rgba(0,212,255,0.15);
+      border-radius: 2px;
+      padding: 5px 12px;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 1px;
+    }
+
+    .chip:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(0,212,255,0.1);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .btn-scan {
+      flex: 1;
+      padding: 16px 32px;
+      background: linear-gradient(135deg, #003d5c, #005580);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-scan::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(0,212,255,0.15), transparent);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .btn-scan:hover { box-shadow: 0 0 24px rgba(0,212,255,0.25); }
+    .btn-scan:hover::after { opacity: 1; }
+    .btn-scan:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-clear {
+      padding: 16px 20px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: var(--sans);
+      font-size: 13px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-clear:hover { border-color: var(--muted); color: var(--text); }
+
+    /* ─── Result ─── */
+    #result {
+      margin-top: 24px;
+      display: none;
+      animation: fadeSlide 0.4s ease-out;
+    }
+
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-card {
+      border: 1px solid;
+      padding: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .result-card.danger { border-color: rgba(255,51,102,0.4); background: rgba(255,51,102,0.04); }
+    .result-card.safe   { border-color: rgba(0,255,136,0.4); background: rgba(0,255,136,0.04); }
+
+    .result-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+    }
+
+    .result-card.danger::before { background: var(--danger); }
+    .result-card.safe::before   { background: var(--safe); }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 22px 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .verdict-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 20px;
+      border-radius: 2px;
+      font-family: var(--sans);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 3px;
+    }
+
+    .danger .verdict-badge { background: rgba(255,51,102,0.15); color: var(--danger); border: 1px solid rgba(255,51,102,0.3); }
+    .safe   .verdict-badge { background: rgba(0,255,136,0.12); color: var(--safe);   border: 1px solid rgba(0,255,136,0.25); }
+
+    .verdict-icon { font-size: 22px; }
+
+    .result-meta {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .result-body { padding: 22px 24px; }
+
+    .prob-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .prob-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 1px;
+      color: var(--muted);
+      width: 80px;
+      flex-shrink: 0;
+    }
+
+    .prob-bar-bg {
+      flex: 1;
+      height: 6px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 1px;
+      overflow: hidden;
+    }
+
+    .prob-bar-fill {
+      height: 100%;
+      border-radius: 1px;
+      transition: width 1s cubic-bezier(.4,0,.2,1);
+    }
+
+    .prob-bar-fill.danger { background: linear-gradient(90deg, #cc0033, var(--danger)); }
+    .prob-bar-fill.safe   { background: linear-gradient(90deg, #00aa55, var(--safe)); }
+
+    .prob-pct {
+      font-family: var(--mono);
+      font-size: 13px;
+      width: 48px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .danger .prob-pct-danger { color: var(--danger); }
+    .safe   .prob-pct-safe   { color: var(--safe); }
+
+    /* Scanning animation */
+    .scan-line {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      z-index: 999;
+      display: none;
+      animation: scanMove 0.8s ease-in-out infinite;
+    }
+
+    @keyframes scanMove {
+      0%   { top: 0; }
+      100% { top: 100vh; }
+    }
+
+    /* ─── Footer ─── */
+    footer {
+      position: relative;
+      z-index: 1;
+      padding: 24px;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="scan-line" id="scanLine"></div>
+
+<!-- Header -->
+<header>
+  <div class="logo-line">
+    <div class="shield-icon">🛡</div>
+    <h1>PHISH<span>GUARD</span></h1>
+  </div>
+  <p class="tagline">AI-Powered Cybersecurity Threat Detection</p>
+  <div class="status-bar">
+    <div class="dot"></div>
+    SYSTEM ONLINE &nbsp;|&nbsp; NAIVE BAYES MODEL &nbsp;|&nbsp; ACC: 97.76%
+  </div>
+</header>
+
+<!-- Stats -->
+<div class="stats-row">
+  <div class="stat-box">
+    <div class="stat-val">47,176</div>
+    <div class="stat-label">Training Samples</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-val">97.76%</div>
+    <div class="stat-label">Accuracy</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-val">0.98</div>
+    <div class="stat-label">F1 Score</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-val">4</div>
+    <div class="stat-label">Datasets</div>
+  </div>
+</div>
+
+<!-- Main -->
+<main>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-dot"></div>
+      <span class="card-title">Email Threat Scanner</span>
+    </div>
+    <div class="card-body">
+      <label>Input Email Content</label>
+      <textarea id="emailInput" placeholder="Paste the email subject and body here...&#10;&#10;Example: 'Your bank account has been suspended. Click here to verify your identity immediately.'"></textarea>
+
+      <div class="example-chips">
+        <span style="font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:1px;align-self:center;">TRY:</span>
+        <div class="chip" onclick="fillExample('phishing')">⚠ Phishing Sample</div>
+        <div class="chip" onclick="fillExample('safe')">✓ Safe Email Sample</div>
+        <div class="chip" onclick="fillExample('bank')">⚠ Bank Fraud Sample</div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-scan" id="scanBtn" onclick="scan()">⚡ SCAN EMAIL</button>
+        <button class="btn-clear" onclick="clearAll()">CLEAR</button>
+      </div>
+
+      <!-- Result -->
+      <div id="result">
+        <div class="result-card" id="resultCard">
+          <div class="result-header">
+            <div class="verdict-badge" id="verdictBadge">
+              <span class="verdict-icon" id="verdictIcon"></span>
+              <span id="verdictText"></span>
+            </div>
+            <div class="result-meta" id="resultMeta"></div>
+          </div>
+          <div class="result-body">
+            <div class="prob-row">
+              <span class="prob-label">PHISHING</span>
+              <div class="prob-bar-bg">
+                <div class="prob-bar-fill danger" id="barPhishing" style="width:0%"></div>
+              </div>
+              <span class="prob-pct" id="pctPhishing" style="color:var(--danger)"></span>
+            </div>
+            <div class="prob-row">
+              <span class="prob-label">SAFE</span>
+              <div class="prob-bar-bg">
+                <div class="prob-bar-fill safe" id="barSafe" style="width:0%"></div>
+              </div>
+              <span class="prob-pct" id="pctSafe" style="color:var(--safe)"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<footer>PHISHGUARD v1.0 &nbsp;|&nbsp; NAIVE BAYES CLASSIFIER &nbsp;|&nbsp; TRAINED ON CEAS-08 · NAZARIO · NIGERIAN FRAUD · SPAMASSASSIN</footer>
+
+<script>
+  const examples = {
+    phishing: "URGENT: Your account has been compromised! Click here immediately to verify your identity and prevent permanent suspension. Your bank account will be locked in 24 hours. Login now: http://secure-login-verify.com",
+    safe: "Hi team, just a reminder that our weekly sync is scheduled for Thursday at 2pm. Please review the agenda I shared earlier and come prepared with your updates. Let me know if you have any conflicts.",
+    bank: "Dear Valued Customer, We have detected unusual activity on your account. To avoid suspension, please confirm your account details and PIN number by clicking the link below. Failure to verify will result in account closure."
+  };
+
+  function fillExample(type) {
+    document.getElementById('emailInput').value = examples[type];
+    document.getElementById('result').style.display = 'none';
+  }
+
+  function clearAll() {
+    document.getElementById('emailInput').value = '';
+    document.getElementById('result').style.display = 'none';
+  }
+
+  async function scan() {
+    const text = document.getElementById('emailInput').value.trim();
+    if (!text) {
+      alert('Please enter email text to scan.');
+      return;
+    }
+
+    const btn = document.getElementById('scanBtn');
+    const scanLine = document.getElementById('scanLine');
+
+    btn.disabled = true;
+    btn.textContent = '⟳ SCANNING...';
+    scanLine.style.display = 'block';
+    document.getElementById('result').style.display = 'none';
+
+    try {
+      const formData = new FormData();
+      formData.append('email_text', text);
+
+      const response = await fetch('/predict', { method: 'POST', body: formData });
+      const data = await response.json();
+
+      if (data.error) { alert(data.error); return; }
+
+      showResult(data);
+    } catch (err) {
+      alert('Connection error. Make sure Flask server is running.');
+      console.error(err);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '⚡ SCAN EMAIL';
+      scanLine.style.display = 'none';
+    }
+  }
+
+  function showResult(data) {
+    const isPhishing = data.prediction === 1;
+
+    const card = document.getElementById('resultCard');
+    card.className = 'result-card ' + (isPhishing ? 'danger' : 'safe');
+
+    document.getElementById('verdictIcon').textContent = isPhishing ? '⚠' : '✓';
+    document.getElementById('verdictText').textContent = data.label;
+    document.getElementById('resultMeta').innerHTML =
+      `Phishing Probability: ${data.phishing_probability}%<br>Safe Probability: ${data.safe_probability}%<br>Model: Multinomial Naive Bayes`;
+
+    // Show result div first (bars start at 0)
+    document.getElementById('result').style.display = 'block';
+
+    // Animate bars after a short delay
+    setTimeout(() => {
+      document.getElementById('barPhishing').style.width = data.phishing_probability + '%';
+      document.getElementById('barSafe').style.width = data.safe_probability + '%';
+      document.getElementById('pctPhishing').textContent = data.phishing_probability + '%';
+      document.getElementById('pctSafe').textContent = data.safe_probability + '%';
+    }, 80);
+  }
+
+  // Allow Ctrl+Enter to scan
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('emailInput').addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 'Enter') scan();
+    });
+  });
+</script>
+</body>
+</html>
