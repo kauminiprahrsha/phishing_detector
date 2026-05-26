@@ -42,7 +42,7 @@ def predict():
         'prediction':        int(prediction),          # 0 or 1
         'label':             'PHISHING' if prediction == 1 else 'SAFE',
         'category':          category if prediction == 1 else 'safe',
-        'threat_probability': threat_prob,             # JS reads data.threat_probability
+       'phishing_probability' : threat_prob,             # JS reads data.threat_probability
         'safe_probability':   safe_prob,               # JS reads data.safe_probability
     })
 
